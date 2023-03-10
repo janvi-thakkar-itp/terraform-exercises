@@ -7,7 +7,7 @@ resource "aws_lb" "web" {
 
   security_groups = [aws_security_group.elb_web.id]
 
-  subnets = [aws_subnet.pub_subnet_1a.id, aws_subnet.pub_subnet_1b.id]
+  subnets = aws_subnet.pub_subnet[*].id
 
   tags = {
     Name = "Target Group Web"
