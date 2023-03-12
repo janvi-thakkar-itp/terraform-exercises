@@ -20,135 +20,15 @@ module "networking" {
   }
 }
 
+# Subnet Group for RDS DB
 resource "aws_db_subnet_group" "dbSubnetGroup" {
-  name = "rdssubnetgrp"
+  name = "RDS Subnet Group"
   subnet_ids = [module.networking.private_subnets[3],module.networking.private_subnets[4],module.networking.private_subnets[5]]
 }
 
-output "subnets"{
-  value=module.networking.private_subnets
-}
-# #security group for DB
-# resource "aws_security_group" "db_sg" {
-#   name        = "allow_tls_db"
-#   description = "Allow traffic in db tier"
-#   vpc_id      = module.networking.vpc_id
-
-#   ingress {
-#     description      = "TLS from VPC"
-#     from_port        = 443
-#     to_port          = 443
-#     protocol         = "tcp"
-#     security_groups      = [aws_security_group.app_sg.id]
-#   }
-
-#   ingress {
-#     description      = "TLS from VPC"
-#     from_port        = 80
-#     to_port          = 80
-#     protocol         = "tcp"
-#     security_groups      = [aws_security_group.app_sg.id]
-#   }
-
-#   ingress {
-#     description      = "TLS from VPC"
-#     from_port        = 3306
-#     to_port          = 3306
-#     protocol         = "TCP"
-#     # security_groups      = [aws_security_group.app_sg.id]
-#     cidr_blocks = ["0.0.0.0/0"]
-#   }
-
-#   egress {
-#     from_port        = 0
-#     to_port          = 0
-#     protocol         = "-1"
-#     cidr_blocks      = ["0.0.0.0/0"]
-#     ipv6_cidr_blocks = ["::/0"]
-#   }
-
-#   tags = {
-#     Name = "allow_tls from app_sg"
-#   }
-# }
-
-# #security group for APP
-# resource "aws_security_group" "app_sg" {
-#   name        = "allow_tls_app"
-#   description = "Allow traffic in app tier"
-#   vpc_id      = module.networking.vpc_id
-
-#   ingress {
-#     description      = "TLS from VPC"
-#     from_port        = 80
-#     to_port          = 80
-#     protocol         = "tcp"
-#     security_groups      = [aws_security_group.web_sg.id]
-#   }
-
-#   egress {
-#     from_port        = 3306
-#     to_port          = 3306
-#     protocol         = "TCP"
-#     cidr_blocks      = ["0.0.0.0/0"]
-#   }
-
-#   egress {
-#     from_port        =0
-#     to_port          = 0
-#     protocol         = "-1"
-#     cidr_blocks      = ["0.0.0.0/0"]
-#   }
-  
-#   tags = {
-#     Name = "allow_tls from web_sg"
-#   }
-# }
-
-# #security group for WEB
-# resource "aws_security_group" "web_sg" {
-#   name        = "allow_tls_web"
-#   description = "Allow traffic in web tier"
-#   vpc_id      = module.networking.vpc_id
-
-#   ingress {
-#     description      = "allow traffic"
-#     from_port        = 443
-#     to_port          = 443
-#     protocol         = "tcp"
-#     cidr_blocks      = ["0.0.0.0/0"]
-#   }
-
-#   ingress {
-#     description      = "allow traffic"
-#     from_port        = 80
-#     to_port          = 80
-#     protocol         = "tcp"
-#     cidr_blocks      = ["0.0.0.0/0"]
-#   }
-
-#   ingress {
-#     description      = "allow traffic"
-#     from_port        = 22
-#     to_port          = 22
-#     protocol         = "tcp"
-#     cidr_blocks      = ["0.0.0.0/0"]
-#   }
-
-#   egress {
-#     from_port        = 0
-#     to_port          = 0
-#     protocol         = "ALL"
-#     cidr_blocks      = ["0.0.0.0/0"]
-#   }
-  
-#   tags = {
-#     Name = "allow traffic from internet"
-#   }
-# }
-
+# Subnet Group for Web Tier
 resource "aws_security_group" "web_sg" {
-    name = "ALBSecurityGroup"
+    name = "ALB Security Group"
     vpc_id = module.networking.vpc_id
     ingress = [ {
       cidr_blocks = [ "0.0.0.0/0" ]
@@ -176,12 +56,13 @@ resource "aws_security_group" "web_sg" {
      ]
 }
 
+# Subnet Group for App Tier
 resource "aws_security_group" "app_sg" {
-  name = "ALBSecurityGroup1"
+  name = "ASG Security Group"
   vpc_id = module.networking.vpc_id
     ingress = [ {
         cidr_blocks = [ ]
-        description = "Allow All Traffic"
+        description = "Allow Inbound Traffic from Web Tier"
         from_port = 0
         ipv6_cidr_blocks = [  ]
         prefix_list_ids = [  ]
@@ -207,8 +88,9 @@ resource "aws_security_group" "app_sg" {
      ]
 }
 
+# Subnet Group for DB Tier
 resource "aws_security_group" "db_sg" {
-    name = "DBSG"
+    name = "DB Security Group"
     vpc_id = module.networking.vpc_id
     ingress = [ {
       cidr_blocks = [ ]
@@ -217,7 +99,7 @@ resource "aws_security_group" "db_sg" {
       self = false
       to_port = 0
       ipv6_cidr_blocks = []
-      description = "Allow Inbound"
+      description = "Allow Inbound from App Tier"
       security_groups = [aws_security_group.app_sg.id]
       prefix_list_ids = []
     } ]

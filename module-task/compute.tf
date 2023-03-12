@@ -25,40 +25,12 @@ resource "aws_security_group" "ec2sg" {
     to_port     = 65535
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-    # ipv6_cidr_blocks = ["::/0"]
   }
 
   tags = {
     "Name" = "janvi-sg"
   }
 }
-
-# resource "aws_launch_template" "launch_template" {
-#   name                   = "ec2-lauch"
-#   user_data              = base64encode(templatefile("user_data.tftpl", { db_name = module.db.db_instance_address }))
-#   instance_type          = var.instance_type
-#   image_id               = var.ami_id
-#   key_name               = aws_key_pair.ec2Key.key_name
-#   vpc_security_group_ids = [aws_security_group.ec2sg.id,aws_security_group.app_sg.id]
-#   tags = {
-#     Owner = var.owner
-#     Lab   = var.lab_tag
-#     Name  = "ec2-lauch"
-#   }
-
-#   tag_specifications {
-#     resource_type = "instance"
-#     tags = {
-#       Owner = var.owner
-#       Lab   = var.lab_tag
-#       Name  = "ec2-lauch"
-#     }
-#   }
-# }
-
-# output "user_data"{
-#   value=aws_launch_template.launch_template.user_data
-# }
 
 resource "aws_key_pair" "ec2Key" {
   public_key = file("ec2.pub")
@@ -151,6 +123,11 @@ resource "aws_alb_target_group" "lb_target" {
   port        = 80
   protocol    = "HTTP"
   vpc_id      = module.networking.vpc_id
+
+  stickiness{
+    enabled=true
+    type="lb_cookie"
+  }
 }
 
 resource "aws_alb_listener" "aws_alb_listner" {
