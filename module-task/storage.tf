@@ -10,9 +10,9 @@ module "db" {
   max_allocated_storage = 10
 
   create_random_password = false
-  db_name                             = "rdsDb"
+  db_name                             = "janviRdsDb"
   username                            = "user"
-  password                            = "password"
+  password                            = var.password
   port=3306
   iam_database_authentication_enabled = true
   availability_zone = var.availability_zone[0]

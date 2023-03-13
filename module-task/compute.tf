@@ -23,9 +23,9 @@ module "asg" {
 
   # Autoscaling group
   name = "${var.practice_tag}-asg"
-  min_size            = 2
-  max_size            = 3
-  desired_capacity    = 3
+  min_size            = 1
+  max_size            = 2
+  desired_capacity    = 2
   health_check_type   = "EC2"
   vpc_zone_identifier = module.networking.public_subnets
   
@@ -37,6 +37,18 @@ module "asg" {
   image_id               = var.ami_id
   key_name               = aws_key_pair.ec2Key.key_name
   security_groups= [aws_security_group.app_sg.id]
+
+  #EC2 tags
+  tag_specifications =[ 
+    {
+    resource_type = "instance"
+    tags = {
+      Owner = var.owner
+      Lab   = var.lab_tag
+      Name  = "${var.practice_tag}-ec2"
+    }
+   }
+  ]
   
   # IAM role & instance profile
   create_iam_instance_profile = true
@@ -80,7 +92,7 @@ resource "aws_key_pair" "ec2Key" {
 
 # ALB Target Group Resource 
 resource "aws_alb_target_group" "lb_target" {
-  name     = "lb-target"
+  name     = "${var.practice_tag}-lb-target"
   port        = 80
   protocol    = "HTTP"
   vpc_id      = module.networking.vpc_id
