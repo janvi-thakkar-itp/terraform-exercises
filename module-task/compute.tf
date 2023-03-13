@@ -6,9 +6,9 @@ module "alb" {
 
   load_balancer_type = "application"
 
-  vpc_id  = module.networking.vpc_id
-  subnets = module.networking.public_subnets
-  security_groups    = [aws_security_group.web_sg.id]
+  vpc_id          = module.networking.vpc_id
+  subnets         = module.networking.public_subnets
+  security_groups = [aws_security_group.web_sg.id]
 
   tags = {
     Owner = var.owner
@@ -22,34 +22,34 @@ module "asg" {
   source = "terraform-aws-modules/autoscaling/aws"
 
   # Autoscaling group
-  name = "${var.practice_tag}-asg"
+  name                = "${var.practice_tag}-asg"
   min_size            = 1
   max_size            = 2
   desired_capacity    = 2
   health_check_type   = "EC2"
   vpc_zone_identifier = module.networking.public_subnets
-  
+
   #lauch template
-  launch_template_name                   = "${var.practice_tag}-ec2-lauch"
-  launch_template_description            = "ec2 launch template"
-  user_data              = base64encode(templatefile("user_data.tftpl", { db_name = module.db.db_instance_address }))
-  instance_type          = var.instance_type
-  image_id               = var.ami_id
-  key_name               = aws_key_pair.ec2Key.key_name
-  security_groups= [aws_security_group.app_sg.id]
+  launch_template_name        = "${var.practice_tag}-ec2-lauch"
+  launch_template_description = "ec2 launch template"
+  user_data                   = base64encode(templatefile("user_data.tftpl", { db_name = module.db.db_instance_address }))
+  instance_type               = var.instance_type
+  image_id                    = var.ami_id
+  key_name                    = aws_key_pair.ec2Key.key_name
+  security_groups             = [aws_security_group.app_sg.id]
 
   #EC2 tags
-  tag_specifications =[ 
+  tag_specifications = [
     {
-    resource_type = "instance"
-    tags = {
-      Owner = var.owner
-      Lab   = var.lab_tag
-      Name  = "${var.practice_tag}-ec2"
+      resource_type = "instance"
+      tags = {
+        Owner = var.owner
+        Lab   = var.lab_tag
+        Name  = "${var.practice_tag}-ec2"
+      }
     }
-   }
   ]
-  
+
   # IAM role & instance profile
   create_iam_instance_profile = true
   iam_role_name               = "ec2-rds-role"
@@ -63,7 +63,7 @@ module "asg" {
   }
 
   capacity_reservation_specification = {
-  capacity_reservation_preference = "open"
+    capacity_reservation_preference = "open"
   }
 
   placement = {
@@ -73,19 +73,19 @@ module "asg" {
   tags = {
     Owner = var.owner
     Lab   = var.lab_tag
-    Name = "${var.practice_tag}-asg"
+    Name  = "${var.practice_tag}-asg"
   }
 }
 
 #EC2 Key Pair
 resource "aws_key_pair" "ec2Key" {
   public_key = file("ec2.pub")
-  key_name = "ec2KeyPair"
+  key_name   = "ec2KeyPair"
 
   tags = {
     Owner = var.owner
     Lab   = var.lab_tag
-    Name = "${var.practice_tag}-keypair"
+    Name  = "${var.practice_tag}-keypair"
   }
 }
 
@@ -93,27 +93,27 @@ resource "aws_key_pair" "ec2Key" {
 # ALB Target Group Resource 
 resource "aws_alb_target_group" "lb_target" {
   name     = "${var.practice_tag}-lb-target"
-  port        = 80
-  protocol    = "HTTP"
-  vpc_id      = module.networking.vpc_id
+  port     = 80
+  protocol = "HTTP"
+  vpc_id   = module.networking.vpc_id
 
-  stickiness{
-    enabled=true
-    type="lb_cookie"
+  stickiness {
+    enabled = true
+    type    = "lb_cookie"
   }
 
   tags = {
     Owner = var.owner
     Lab   = var.lab_tag
-    Name = "${var.practice_tag}-alb-tg"
+    Name  = "${var.practice_tag}-alb-tg"
   }
 }
 
 # ALB Target Group Listner
 resource "aws_alb_listener" "aws_alb_listner" {
   load_balancer_arn = module.alb.lb_arn
-  port = "80"
-  protocol = "HTTP"
+  port              = "80"
+  protocol          = "HTTP"
   default_action {
     target_group_arn = aws_alb_target_group.lb_target.arn
     type             = "forward"
@@ -122,7 +122,7 @@ resource "aws_alb_listener" "aws_alb_listner" {
   tags = {
     Owner = var.owner
     Lab   = var.lab_tag
-    Name = "${var.practice_tag}-alb-listner"
+    Name  = "${var.practice_tag}-alb-listner"
   }
 }
 

@@ -55,5 +55,5 @@ variable "ami_id" {
 
 #Password for RDS
 variable "password" {
-  type    = string
+  type = string
 }
