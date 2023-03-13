@@ -1,53 +1,28 @@
+#Application Load Balancer
+module "alb" {
+  source = "terraform-aws-modules/alb/aws"
 
-resource "aws_security_group" "ec2sg" {
-  name        = "janvi-ec2-sg"
-  description = "EC2 sg for terraform demo"
-  vpc_id      = module.networking.vpc_id
-  
-  ingress {
-    description = "Allowing SSH port for EC2"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  name = "${var.practice_tag}-alb"
 
-  ingress {
-    description = "Allowing HTTP port for EC2"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  load_balancer_type = "application"
 
-  egress {
-    from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  vpc_id  = module.networking.vpc_id
+  subnets = module.networking.public_subnets
+  security_groups    = [aws_security_group.web_sg.id]
 
   tags = {
-    "Name" = "janvi-sg"
+    Owner = var.owner
+    Lab   = var.lab_tag
+    Name  = "${var.practice_tag}-alb"
   }
 }
 
-resource "aws_key_pair" "ec2Key" {
-  public_key = file("ec2.pub")
-  key_name = "ec2KeyPair"
-}
-
-resource "aws_autoscaling_attachment" "asg_attachment_elb" {
-  autoscaling_group_name = module.asg.autoscaling_group_id
-  alb_target_group_arn   = aws_alb_target_group.lb_target.arn
-}
-
+#Auto-Scaling Group
 module "asg" {
   source = "terraform-aws-modules/autoscaling/aws"
 
   # Autoscaling group
-  name = "main_asg"
-
+  name = "${var.practice_tag}-asg"
   min_size            = 2
   max_size            = 3
   desired_capacity    = 3
@@ -55,7 +30,7 @@ module "asg" {
   vpc_zone_identifier = module.networking.public_subnets
   
   #lauch template
-  launch_template_name                   = "ec2-lauch"
+  launch_template_name                   = "${var.practice_tag}-ec2-lauch"
   launch_template_description            = "ec2 launch template"
   user_data              = base64encode(templatefile("user_data.tftpl", { db_name = module.db.db_instance_address }))
   instance_type          = var.instance_type
@@ -86,38 +61,24 @@ module "asg" {
   tags = {
     Owner = var.owner
     Lab   = var.lab_tag
-    Name  = var.practice_tag
+    Name = "${var.practice_tag}-asg"
   }
 }
 
-
-module "alb" {
-  source = "terraform-aws-modules/alb/aws"
-
-  name = "main-alb"
-
-  load_balancer_type = "application"
-
-  vpc_id  = module.networking.vpc_id
-  subnets = module.networking.public_subnets
-  security_groups    = [aws_security_group.web_sg.id]
-
-  target_groups = [
-    {
-      name_prefix      = "elb-"
-      backend_protocol = "HTTP"
-      backend_port     = 80
-    }
-  ]
-
+#EC2 Key Pair
+resource "aws_key_pair" "ec2Key" {
+  public_key = file("ec2.pub")
+  key_name = "ec2KeyPair"
 
   tags = {
     Owner = var.owner
-    Lab   = "${var.lab_tag}-elb"
-    Name  = var.practice_tag
+    Lab   = var.lab_tag
+    Name = "${var.practice_tag}-keypair"
   }
 }
 
+
+# ALB Target Group Resource 
 resource "aws_alb_target_group" "lb_target" {
   name     = "lb-target"
   port        = 80
@@ -128,8 +89,15 @@ resource "aws_alb_target_group" "lb_target" {
     enabled=true
     type="lb_cookie"
   }
+
+  tags = {
+    Owner = var.owner
+    Lab   = var.lab_tag
+    Name = "${var.practice_tag}-alb-tg"
+  }
 }
 
+# ALB Target Group Listner
 resource "aws_alb_listener" "aws_alb_listner" {
   load_balancer_arn = module.alb.lb_arn
   port = "80"
@@ -138,4 +106,17 @@ resource "aws_alb_listener" "aws_alb_listner" {
     target_group_arn = aws_alb_target_group.lb_target.arn
     type             = "forward"
   }
+
+  tags = {
+    Owner = var.owner
+    Lab   = var.lab_tag
+    Name = "${var.practice_tag}-alb-listner"
+  }
 }
+
+#Auto Scaling Attachment as ALB Target Group
+resource "aws_autoscaling_attachment" "asg_attachment_elb" {
+  autoscaling_group_name = module.asg.autoscaling_group_id
+  alb_target_group_arn   = aws_alb_target_group.lb_target.arn
+}
+

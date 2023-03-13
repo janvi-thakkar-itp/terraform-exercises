@@ -16,19 +16,19 @@ module "networking" {
   tags = {
     Owner = var.owner
     Lab   = var.lab_tag
-    Name  = var.practice_tag
+    Name  = "${var.practice_tag}-networking"
   }
 }
 
 # Subnet Group for RDS DB
 resource "aws_db_subnet_group" "dbSubnetGroup" {
-  name = "RDS Subnet Group"
+  name = "rdssubnetgrp"
   subnet_ids = [module.networking.private_subnets[3],module.networking.private_subnets[4],module.networking.private_subnets[5]]
 }
 
 # Subnet Group for Web Tier
 resource "aws_security_group" "web_sg" {
-    name = "ALB Security Group"
+    name = "${var.practice_tag}-web-sg"
     vpc_id = module.networking.vpc_id
     ingress = [ {
       cidr_blocks = [ "0.0.0.0/0" ]
@@ -54,11 +54,17 @@ resource "aws_security_group" "web_sg" {
             to_port = 0
         }
      ]
+
+     tags = {
+    Owner = var.owner
+    Lab   = var.lab_tag
+    Name  = "${var.practice_tag}-web-sg"
+  }
 }
 
 # Subnet Group for App Tier
 resource "aws_security_group" "app_sg" {
-  name = "ASG Security Group"
+  name = "${var.practice_tag}-asg-sg"
   vpc_id = module.networking.vpc_id
     ingress = [ {
         cidr_blocks = [ ]
@@ -86,11 +92,17 @@ resource "aws_security_group" "app_sg" {
             to_port = 0
         }
      ]
+
+      tags = {
+    Owner = var.owner
+    Lab   = var.lab_tag
+    Name  = "${var.practice_tag}-app-sg"
+  }
 }
 
 # Subnet Group for DB Tier
 resource "aws_security_group" "db_sg" {
-    name = "DB Security Group"
+    name = "${var.practice_tag}-db-sg"
     vpc_id = module.networking.vpc_id
     ingress = [ {
       cidr_blocks = [ ]
@@ -114,4 +126,10 @@ resource "aws_security_group" "db_sg" {
       prefix_list_ids = []
       to_port = 0
     } ]
+
+     tags = {
+    Owner = var.owner
+    Lab   = var.lab_tag
+    Name  = "${var.practice_tag}-db-sg"
+  }
 }
